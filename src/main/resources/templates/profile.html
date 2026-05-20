@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Мой профиль</title>
+</head>
+<body>
+<h1>Добро пожаловать, <span th:text="${user.firstName}">Имя</span>!</h1>
+
+<p>Ваш ID: <span th:text="${user.id}"></span></p>
+<p>Email: <span th:text="${user.email}"></span></p>
+<p>Баланс SkillCoin: <span th:text="${user.skillCoinBalance}"></span></p>
+
+<hr>
+<a href="/logout">Выйти</a>
+</body>
+</html>
