@@ -9,8 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.Optional;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class AuthController {
@@ -19,23 +18,17 @@ public class AuthController {
     private UserService userService;
 
     @GetMapping("/login")
-    public String loginPage() {
-        return "login";
-    }
+    public String loginPage() { return "login"; }
 
     @GetMapping("/register")
-    public String registerPage() {
-        return "register";
-    }
+    public String registerPage() { return "register"; }
 
     @PostMapping("/login")
     public String performLogin(@RequestParam String email,
                                @RequestParam String password,
                                HttpSession session,
                                Model model) {
-
         var userOpt = userService.loginUser(email, password);
-
         if (userOpt.isPresent()) {
             session.setAttribute("userId", userOpt.get().getId());
             return "redirect:/profile";
@@ -65,19 +58,77 @@ public class AuthController {
     @GetMapping("/profile")
     public String profilePage(HttpSession session, Model model) {
         Long userId = (Long) session.getAttribute("userId");
-
         if (userId == null) {
             return "redirect:/login";
         }
 
-        Optional<User> userOpt = userService.getUserById(userId);
-
+        var userOpt = userService.getUserWithDetails(userId);
         if (userOpt.isPresent()) {
-            model.addAttribute("user", userOpt.get());
+            User user = userOpt.get();
+            model.addAttribute("user", user);
+
+            if (user.getReviews() != null && !user.getReviews().isEmpty()) {
+                double avgRating = user.getReviews().stream()
+                        .mapToDouble(r -> r.getRating() != null ? r.getRating() : 0)
+                        .average()
+                        .orElse(0.0);
+                model.addAttribute("avgRating", String.format("%.1f", avgRating));
+            } else {
+                model.addAttribute("avgRating", "0.0");
+            }
+
             return "profile";
-        } else {
+        }
+        return "redirect:/login";
+    }
+
+    @PostMapping("/profile/update")
+    public String updateProfile(@RequestParam(required = false) String firstName,
+                                @RequestParam(required = false) String lastName,
+                                @RequestParam(required = false) String bio,
+                                @RequestParam(required = false) String city,
+                                HttpSession session,
+                                RedirectAttributes redirectAttrs) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
             return "redirect:/login";
         }
+
+        try {
+            userService.updateProfile(userId, firstName, lastName, bio, city);
+            redirectAttrs.addFlashAttribute("success", "Профиль обновлён!");
+        } catch (Exception e) {
+            redirectAttrs.addFlashAttribute("error", "Ошибка: " + e.getMessage());
+        }
+        return "redirect:/profile";
+    }
+
+    @PostMapping("/profile/skills/add-can")
+    public String addSkillCan(@RequestParam String skill,
+                              HttpSession session,
+                              RedirectAttributes redirectAttrs) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return "redirect:/login";
+
+        if (skill != null && !skill.trim().isEmpty()) {
+            userService.addSkillCanOffer(userId, skill.trim());
+            redirectAttrs.addFlashAttribute("success", "Навык добавлен!");
+        }
+        return "redirect:/profile";
+    }
+
+    @PostMapping("/profile/skills/add-need")
+    public String addSkillNeed(@RequestParam String skill,
+                               HttpSession session,
+                               RedirectAttributes redirectAttrs) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return "redirect:/login";
+
+        if (skill != null && !skill.trim().isEmpty()) {
+            userService.addSkillNeeded(userId, skill.trim());
+            redirectAttrs.addFlashAttribute("success", "Потребность добавлена!");
+        }
+        return "redirect:/profile";
     }
 
     @GetMapping("/logout")

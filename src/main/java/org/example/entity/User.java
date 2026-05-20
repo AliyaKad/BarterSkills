@@ -46,7 +46,20 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
-    // Связи
+    private String city;
+
+    @ElementCollection
+    @CollectionTable(name = "user_skills_can_offer", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "skill")
+    @Builder.Default
+    private List<String> skillsCanOffer = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "user_skills_needed", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "need")
+    @Builder.Default
+    private List<String> skillsNeeded = new ArrayList<>();
+
     @OneToMany(mappedBy = "requestedBy", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ServiceRequest> serviceRequests = new ArrayList<>();
@@ -75,7 +88,6 @@ public class User {
     @Builder.Default
     private List<Message> receivedMessages = new ArrayList<>();
 
-    // Методы для работы с балансом
     public void addSkillCoins(Integer amount) {
         this.skillCoinBalance += amount;
     }

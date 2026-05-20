@@ -5,7 +5,7 @@ import org.example.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Service
@@ -45,5 +45,54 @@ public class UserService {
 
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> getUserWithDetails(Long userId) {
+        return userRepository.findById(userId);
+    }
+
+    @Transactional
+    public User updateProfile(Long userId, String firstName, String lastName,
+                              String bio, String city) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        if (firstName != null && !firstName.isEmpty()) {
+            user.setFirstName(firstName);
+        }
+        if (lastName != null && !lastName.isEmpty()) {
+            user.setLastName(lastName);
+        }
+        if (bio != null) {
+            user.setBio(bio);
+        }
+        if (city != null) {
+            user.setCity(city);
+        }
+
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User addSkillCanOffer(Long userId, String skill) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        if (!user.getSkillsCanOffer().contains(skill)) {
+            user.getSkillsCanOffer().add(skill);
+            userRepository.save(user);
+        }
+        return user;
+    }
+
+    @Transactional
+    public User addSkillNeeded(Long userId, String skill) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        if (!user.getSkillsNeeded().contains(skill)) {
+            user.getSkillsNeeded().add(skill);
+            userRepository.save(user);
+        }
+        return user;
     }
 }
