@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход - BarterSkills</title>
+</head>
+<body>
+<h1>Вход в систему</h1>
+
+<div style="color: red;" th:if="${error}" th:text="${error}"></div>
+
+<form action="/login" method="post">
+    <p>
+        Email: <br>
+        <input type="email" name="email" required placeholder="test@example.com">
+    </p>
+    <p>
+        Пароль: <br>
+        <input type="password" name="password" required>
+    </p>
+    <button type="submit">Войти</button>
+</form>
+
+<hr>
+<p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+</body>
+</html>

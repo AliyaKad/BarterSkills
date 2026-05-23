@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация - BarterSkills</title>
+</head>
+<body>
+<h1>Регистрация</h1>
+
+<div style="color: red;" th:if="${error}" th:text="${error}"></div>
+
+<form action="/register" method="post">
+    <p>
+        Имя: <br>
+        <input type="text" name="firstName" required>
+    </p>
+    <p>
+        Фамилия: <br>
+        <input type="text" name="lastName" required>
+    </p>
+    <p>
+        Email: <br>
+        <input type="email" name="email" required>
+    </p>
+    <p>
+        Пароль: <br>
+        <input type="password" name="password" required>
+    </p>
+    <button type="submit">Создать аккаунт</button>
+</form>
+
+<hr>
+<p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+</body>
+</html>
