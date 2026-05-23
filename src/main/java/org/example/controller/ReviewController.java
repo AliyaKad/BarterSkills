@@ -1,59 +1,193 @@
 package org.example.controller;
 
-import org.example.dto.CreateReviewRequest;
-import org.example.dto.RatingResponse;
-import org.example.dto.ReviewResponse;
-import org.example.service.ReviewService;
-import jakarta.validation.Valid;
+import org.example.entity.Review;
+import org.example.entity.User;
+import org.example.repository.ReviewRepository;
+import org.example.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
-@RestController
-@RequestMapping("/api/reviews")
+@Controller
 @RequiredArgsConstructor
 public class ReviewController {
 
-    private final ReviewService reviewService;
+    private final ReviewRepository reviewRepository;
+    private final UserRepository userRepository;
 
-    // Создать отзыв
-    // TODO: пока передаем authorId=1 (первый пользователь в БД). Потом заменим на текущего из SecurityContext
-    @PostMapping
-    public ResponseEntity<ReviewResponse> createReview(@Valid @RequestBody CreateReviewRequest request) {
-        // ВРЕМЕННО: используем пользователя с ID = 1
-        Long tempAuthorId = 1L;
-        ReviewResponse response = reviewService.createReview(request, tempAuthorId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    // Страница "Оставить отзыв"
+    @GetMapping("/reviews/create/{userId}")
+    public String showLeaveReviewForm(@PathVariable Long userId, Model model) {
+        Long currentUserId = getCurrentUserId();
+
+        // Нельзя оставить отзыв самому себе
+        if (currentUserId.equals(userId)) {
+            model.addAttribute("error", "Нельзя оставить отзыв самому себе");
+            return "redirect:/profile";
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        model.addAttribute("user", user);
+        return "review-create";
     }
 
-    // Получить все отзывы о пользователе
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ReviewResponse>> getReviewsForUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(reviewService.getReviewsForUser(userId));
+
+    // Обработка отправки отзыва
+    @PostMapping("/reviews/create")
+    public String createReview(
+            @RequestParam Long userId,
+            @RequestParam Integer rating,
+            @RequestParam(required = false) String comment,
+//            @RequestParam(required = false) Long dealId,
+            Model model) {
+
+        try {
+            Long currentUserId = getCurrentUserId();
+
+            // Нельзя оставить отзыв самому себе
+            if (currentUserId.equals(userId)) {
+                throw new RuntimeException("Нельзя оставить отзыв самому себе");
+            }
+
+            User author = userRepository.findById(currentUserId)
+                    .orElseThrow(() -> new RuntimeException("Автор не найден"));
+            User targetUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+            // Проверка: не оставлял ли уже отзыв для этой сделки
+//            if (dealId != null) {
+//                boolean alreadyReviewed = reviewRepository.existsByAuthorIdAndDealId(currentUserId, dealId);
+//                if (alreadyReviewed) {
+//                    throw new RuntimeException("Вы уже оставили отзыв для этой сделки");
+//                }
+//            }
+
+            // Создаем отзыв
+            Review review = Review.builder()
+                    .author(author)
+                    .user(targetUser)
+                    .rating(rating)
+                    .comment(comment != null ? comment : "")
+                    .createdAt(LocalDateTime.now())
+//                    .deal(dealId)
+                    .build();
+
+            reviewRepository.save(review);
+
+            // Обновляем средний рейтинг пользователя
+            updateUserAverageRating(targetUser);
+
+            model.addAttribute("success", "Отзыв успешно оставлен!");
+
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "redirect:/profile";
+        }
+
+        return "redirect:/profile";
     }
 
-    // Получить рейтинг пользователя
-    @GetMapping("/user/{userId}/rating")
-    public ResponseEntity<RatingResponse> getUserRating(@PathVariable Long userId) {
-        return ResponseEntity.ok(reviewService.getUserRating(userId));
+    // Редактирование отзыва
+    @GetMapping("/reviews/edit/{id}")
+    public String showEditReviewForm(@PathVariable Long id, Model model) {
+        Long currentUserId = getCurrentUserId();
+
+        Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Отзыв не найден"));
+
+        // Проверяем, что текущий пользователь — автор отзыва
+        if (!review.getAuthor().getId().equals(currentUserId)) {
+            model.addAttribute("error", "Только автор может редактировать отзыв");
+            return "redirect:/profile";
+        }
+
+        model.addAttribute("review", review);
+        model.addAttribute("targetUser", review.getUser());
+        return "edit-review";
     }
 
-    // Получить отзывы, написанные пользователем
-    @GetMapping("/author/{userId}")
-    public ResponseEntity<List<ReviewResponse>> getReviewsByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(reviewService.getReviewsByUser(userId));
+    // Обработка обновления отзыва
+    @PostMapping("/reviews/update/{id}")
+    public String updateReview(
+            @PathVariable Long id,
+            @RequestParam Integer rating,
+            @RequestParam(required = false) String comment,
+            Model model) {
+
+        try {
+            Long currentUserId = getCurrentUserId();
+
+            Review review = reviewRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Отзыв не найден"));
+
+            // Проверяем права
+            if (!review.getAuthor().getId().equals(currentUserId)) {
+                throw new RuntimeException("Только автор может редактировать отзыв");
+            }
+
+            review.setRating(rating);
+            review.setComment(comment != null ? comment : "");
+            reviewRepository.save(review);
+
+            // Обновляем рейтинг пользователя
+            updateUserAverageRating(review.getUser());
+
+            model.addAttribute("success", "Отзыв обновлен!");
+
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/profile";
     }
 
-    // Удалить отзыв
-    @DeleteMapping("/{reviewId}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
-        // ВРЕМЕННО: используем пользователя с ID = 1, НЕ админ
-        Long tempAuthorId = 1L;
-        boolean isAdmin = false;
-        reviewService.deleteReview(reviewId, tempAuthorId, isAdmin);
-        return ResponseEntity.noContent().build();
+    // Удаление отзыва
+    @PostMapping("/reviews/delete/{id}")
+    public String deleteReview(@PathVariable Long id, Model model) {
+        try {
+            Long currentUserId = getCurrentUserId();
+
+            Review review = reviewRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Отзыв не найден"));
+
+            // Проверяем права (автор или админ)
+            if (!review.getAuthor().getId().equals(currentUserId)) {
+                // TODO: добавить проверку на админа
+                throw new RuntimeException("Нет прав для удаления отзыва");
+            }
+
+            User targetUser = review.getUser();
+            reviewRepository.delete(review);
+
+            // Обновляем рейтинг пользователя
+            updateUserAverageRating(targetUser);
+
+            model.addAttribute("success", "Отзыв удален!");
+
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/profile";
+    }
+
+    // Получить ID текущего пользователя
+    private Long getCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return userRepository.findByEmail(auth.getName()).orElseThrow().getId();
+    }
+
+    // Обновить средний рейтинг пользователя
+    private void updateUserAverageRating(User user) {
+        Double avgRating = reviewRepository.getAverageRatingForUser(user);
+        user.setRating(avgRating != null ? avgRating.floatValue() : 0.0f);
+        userRepository.save(user);
     }
 }

@@ -133,6 +133,12 @@
 
 <h2>Отзывы обо мне</h2>
 <p>
+    <a th:href="@{/reviews/create/{id}(id=${user.id})}">
+        ✍️ Оставить отзыв этому пользователю
+    </a>
+</p>
+
+<p>
     <span th:if="${#lists.isEmpty(user.reviews)}">(пока нет отзывов)</span>
 </p>
 <ul>
