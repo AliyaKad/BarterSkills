@@ -18,10 +18,16 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // Найти все отзывы, написанные пользователем
     List<Review> findByAuthor(User author);
 
-    // Найти отзыв по сделке (это чтобы нельзя было оставить два отзыва на одну сделку)
-    boolean existsByDealId(Long dealId);
+    // Найти отзыв по сделке
+    List<Review> findByDealId(Long dealId);
 
-    // Посчитать средний рейтинг пользователя
+    // Проверить, оставлял ли пользователь уже отзыв для этой сделки
+    boolean existsByAuthorAndDealId(User author, Long dealId);
+
+    // Подсчитать количество отзывов о пользователе
+    long countByUser(User user);
+
+    // Получить средний рейтинг пользователя (если через JPQL)
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.user = :user")
     Double getAverageRatingForUser(@Param("user") User user);
 }

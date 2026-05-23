@@ -9,10 +9,14 @@ import java.time.LocalDateTime;
 public class ReviewResponse {
     private Long id;
     private Long authorId;
-    private String authorName;
-    private Long revieweeId;
-    private String revieweeName;
+    private String authorFirstName;
+    private String authorLastName;
+    private Long userId;
+    private String userFirstName;
+    private String userLastName;
     private Integer rating;
     private String comment;
     private LocalDateTime createdAt;
+    private Long dealId;
+    private Long serviceRequestId;
 }

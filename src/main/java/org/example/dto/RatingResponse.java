@@ -7,6 +7,6 @@ import lombok.Data;
 @Builder
 public class RatingResponse {
     private Long userId;
-    private Double averageRating;
-    private Long totalReviews;
+    private Double averageRating;   // средний рейтинг (1.0 - 5.0)
+    private Long totalReviews;      // количество отзывов
 }
