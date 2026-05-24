@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Оставить отзыв - BarterSkills</title>
+</head>
+<body>
+
+<div th:if="${success}" style="color: green;" th:text="${success}"></div>
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<h1>Оставить отзыв о пользователе</h1>
+
+<p><a href="/profile">← Назад в профиль</a></p>
+
+<hr>
+
+<h2>Отзыв о: <span th:text="${reviewedUser.firstName + ' ' + reviewedUser.lastName}"></span></h2>
+
+<form action="/reviews/create" method="post">
+  <!-- ID пользователя, о котором отзыв (скрытое поле) -->
+  <input type="hidden" name="userId" th:value="${reviewedUser.id}">
+
+  <!-- Оценка 1-5 -->
+  <p>
+    <label>Оценка:<br>
+      <select name="rating" required>
+        <option value="">Выберите оценку</option>
+        <option value="5">5 — Отлично</option>
+        <option value="4">4 — Хорошо</option>
+        <option value="3">3 — Средне</option>
+        <option value="2">2 — Плохо</option>
+        <option value="1">1 — Ужасно</option>
+      </select>
+    </label>
+  </p>
+
+  <!-- Текст отзыва -->
+  <p>
+    <label>Комментарий (необязательно):<br>
+      <textarea name="comment" rows="4" cols="50" placeholder="Расскажите о вашем опыте..."></textarea>
+    </label>
+  </p>
+
+  <!-- ID сделки (опционально, пока не используется) -->
+  <input type="hidden" name="dealId" value="">
+
+  <hr>
+  <button type="submit">Отправить отзыв</button>
+  <a href="/profile">Отмена</a>
+</form>
+
+</body>
+</html>

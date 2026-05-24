@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Профиль - BarterSkills</title>
+</head>
+<body>
+
+<div th:if="${success}" style="color: green;" th:text="${success}"></div>
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<h1>Профиль пользователя <span th:text="${user.firstName + ' ' + user.lastName}"></span></h1>
+
+<p>
+    <a th:href="@{/chat/{userId}(userId=${user.id})}">💬 Написать сообщение</a>
+</p>
+
+<hr>
+
+<h2>Информация</h2>
+<p><strong>Имя:</strong> <span th:text="${user.firstName}"></span> <span th:text="${user.lastName}"></span></p>
+<p><strong>Город:</strong> <span th:text="${user.city != null ? user.city : 'Не указан'}"></span></p>
+<p><strong>О себе:</strong> <span th:text="${user.bio != null ? user.bio : 'Ничего не рассказал о себе'}"></span></p>
+<p><strong>Рейтинг:</strong> <span th:text="${avgRating}"></span>/5</p>
+<p><strong>Проверен:</strong> <span th:text="${user.isVerified} ? 'Да' : 'Нет'"></span></p>
+
+<hr>
+
+<h2>Может предложить</h2>
+
+<p th:if="${#lists.isEmpty(user.skillsCanOffer)}">(пользователь пока ничего не предложил)</p>
+<ul>
+    <li th:each="skill : ${user.skillsCanOffer}" th:text="${skill}"></li>
+</ul>
+
+<hr>
+
+<h2>Ищет</h2>
+
+<p th:if="${#lists.isEmpty(user.skillsNeeded)}">(пользователь пока ничего не ищет)</p>
+<ul>
+    <li th:each="need : ${user.skillsNeeded}" th:text="${need}"></li>
+</ul>
+
+<hr>
+
+<h2>Предлагает услуги</h2>
+
+<p th:if="${#lists.isEmpty(user.serviceOffers)}">(нет активных предложений)</p>
+<ul>
+    <li th:each="offer : ${user.serviceOffers}">
+        <strong th:text="${offer.title}">Название</strong>
+        (<span th:text="${offer.category}">Категория</span>) —
+        <span th:text="${offer.priceInSkillCoins}">0</span> SC —
+        Статус: <span th:text="${offer.status}">ACTIVE</span>
+        <br>
+        <small th:text="${offer.description}">Описание...</small>
+    </li>
+</ul>
+
+<hr>
+
+<h2>Ищет услуги</h2>
+
+<p th:if="${#lists.isEmpty(user.serviceRequests)}">(нет активных запросов)</p>
+<ul>
+    <li th:each="req : ${user.serviceRequests}">
+        <strong th:text="${req.title}">Название</strong>
+        (<span th:text="${req.category}">Категория</span>) —
+        до <span th:text="${req.maxPrice}">0</span> SC —
+        Статус: <span th:text="${req.status}">OPEN</span>
+        <br>
+        <small th:text="${req.description}">Описание...</small>
+    </li>
+</ul>
+
+<hr>
+
+<h2>Отзывы об этом пользователе</h2>
+
+<p>
+    <a th:href="@{/reviews/create/{userId}(userId=${user.id})}">➕ Оставить отзыв</a>
+    |
+    <a th:href="@{/reviews/user/{userId}(userId=${user.id})}">📋 Все отзывы</a>
+</p>
+
+<p th:if="${#lists.isEmpty(user.reviews)}">(пока нет отзывов)</p>
+
+<ul>
+    <li th:each="review : ${user.reviews}">
+        <a th:href="@{/profile/{userId}(userId=${review.author.id})}" th:text="${review.author.firstName + ' ' + review.author.lastName}">Имя автора</a>:
+        Оценка: <span th:text="${review.rating}">5</span>/5
+        <br>
+        <span th:text="${review.comment}">Текст отзыва...</span>
+        <br>
+        <small th:text="${#temporals.format(review.createdAt, 'dd.MM.yyyy')}">Дата</small>
+        <hr style="margin: 5px 0;">
+    </li>
+</ul>
+
+</body>
+</html>

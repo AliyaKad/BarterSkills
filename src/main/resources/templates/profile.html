@@ -132,17 +132,39 @@
 <hr>
 
 <h2>Отзывы обо мне</h2>
+
+<!-- Кнопка для добавления отзыва о другом пользователе -->
+<p>
+    <a th:href="@{/reviews/create/{userId}(userId=${user.id})}">➕ Оставить отзыв</a>
+    |
+    <a th:href="@{/reviews/user/{userId}(userId=${user.id})}">📋 Все отзывы</a>
+    |
+    <a href="/reviews/my">✍️ Мои отзывы</a>
+</p>
+
 <p>
     <span th:if="${#lists.isEmpty(user.reviews)}">(пока нет отзывов)</span>
 </p>
+
+<!-- Список отзывов с кнопками действий -->
 <ul>
     <li th:each="review : ${user.reviews}">
-        <strong th:text="${review.author.firstName + ' ' + review.author.lastName}">Имя автора</strong>:
+        <a th:href="@{/profile/{userId}(userId=${review.author.id})}" th:text="${review.author.firstName + ' ' + review.author.lastName}">Имя автора</a>:
         Оценка: <span th:text="${review.rating}">5</span>/5
         <br>
         <span th:text="${review.comment}">Текст отзыва...</span>
         <br>
         <small th:text="${#temporals.format(review.createdAt, 'dd.MM.yyyy')}">Дата</small>
+
+        <!-- Кнопки редактирования/удаления (только для своих отзывов) -->
+        <div th:if="${review.author.id == session.userId}" style="margin-top: 5px;">
+            <a th:href="@{/reviews/edit/{reviewId}(reviewId=${review.id})}" style="font-size: 12px;">✏ Редактировать</a>
+            |
+            <form th:action="@{/reviews/delete/{reviewId}(reviewId=${review.id})}" method="post" style="display: inline;" onsubmit="return confirm('Точно удалить отзыв?')">
+                <button type="submit" style="background: none; border: none; color: red; cursor: pointer; font-size: 12px;">🗑 Удалить</button>
+            </form>
+        </div>
+        <hr style="margin: 5px 0;">
     </li>
 </ul>
 <hr>

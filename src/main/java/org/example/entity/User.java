@@ -106,4 +106,17 @@ public class User {
                 .average()
                 .orElse(0.0);
     }
+
+    // обновить рейтинг
+    public void updateAverageRating() {
+        if (reviews == null || reviews.isEmpty()) {
+            this.rating = 0.0f;
+        } else {
+            double avg = reviews.stream()
+                    .mapToDouble(Review::getRating)
+                    .average()
+                    .orElse(0.0);
+            this.rating = (float) avg;
+        }
+    }
 }

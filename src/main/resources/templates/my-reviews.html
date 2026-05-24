@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Мои отзывы - BarterSkills</title>
+</head>
+<body>
+
+<div th:if="${success}" style="color: green;" th:text="${success}"></div>
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<h1>Мои отзывы</h1>
+
+<p><a href="/profile">← Назад в профиль</a></p>
+
+<hr>
+
+<p th:if="${#lists.isEmpty(reviews)}">Вы ещё не оставили ни одного отзыва</p>
+
+<ul>
+  <li th:each="review : ${reviews}">
+    <strong>О ком:</strong> <a th:href="@{/profile/{userId}(userId=${review.user.id})}" th:text="${review.user.firstName + ' ' + review.user.lastName}">Пользователь</a>
+    <br>
+    <strong>Оценка:</strong> <span th:text="${review.rating}">5</span>/5
+    <br>
+    <strong>Комментарий:</strong> <span th:text="${review.comment}">Текст</span>
+    <br>
+    <small th:text="${#temporals.format(review.createdAt, 'dd.MM.yyyy')}">Дата</small>
+
+    <div style="margin-top: 5px;">
+      <a th:href="@{/reviews/edit/{reviewId}(reviewId=${review.id})}">✏ Редактировать</a>
+      |
+      <form th:action="@{/reviews/delete/{reviewId}(reviewId=${review.id})}" method="post" style="display: inline;" onsubmit="return confirm('Точно удалить отзыв?')">
+        <button type="submit" style="background: none; border: none; color: red; cursor: pointer;">🗑 Удалить</button>
+      </form>
+    </div>
+    <hr>
+  </li>
+</ul>
+
+</body>
+</html>
