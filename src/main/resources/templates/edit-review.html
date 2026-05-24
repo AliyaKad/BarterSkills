@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Редактировать отзыв - BarterSkills</title>
+</head>
+<body>
+
+<div th:if="${success}" style="color: green;" th:text="${success}"></div>
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<h1>Редактировать отзыв</h1>
+
+<p><a href="/profile">← Назад в профиль</a></p>
+
+<hr>
+
+<h2>Отзыв о: <span th:text="${reviewedUser.firstName + ' ' + reviewedUser.lastName}"></span></h2>
+
+<form th:action="@{/reviews/update/{reviewId}(reviewId=${review.id})}" method="post">
+  <!-- Оценка 1-5 -->
+  <p>
+    <label>Оценка:<br>
+      <select name="rating" required>
+        <option value="5" th:selected="${review.rating == 5}">5 — Отлично</option>
+        <option value="4" th:selected="${review.rating == 4}">4 — Хорошо</option>
+        <option value="3" th:selected="${review.rating == 3}">3 — Средне</option>
+        <option value="2" th:selected="${review.rating == 2}">2 — Плохо</option>
+        <option value="1" th:selected="${review.rating == 1}">1 — Ужасно</option>
+      </select>
+    </label>
+  </p>
+
+  <!-- Текст отзыва -->
+  <p>
+    <label>Комментарий:<br>
+      <textarea name="comment" rows="4" cols="50" th:text="${review.comment}"></textarea>
+    </label>
+  </p>
+
+  <hr>
+  <button type="submit">Сохранить изменения</button>
+  <a href="/profile">Отмена</a>
+</form>
+
+<hr>
+
+<!-- Форма удаления -->
+<form th:action="@{/reviews/delete/{reviewId}(reviewId=${review.id})}" method="post" onsubmit="return confirm('Точно удалить отзыв?')">
+  <button type="submit" style="color: red;">🗑 Удалить отзыв</button>
+</form>
+
+</body>
+</html>

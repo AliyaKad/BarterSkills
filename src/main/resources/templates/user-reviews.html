@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <th:block th:text="'Отзывы о ' + ${reviewedUser.firstName} + ' ' + ${reviewedUser.lastName} + ' - BarterSkills'">Заголовок</th:block>
+    <title>Отзывы</title>
+</head>
+<body>
+
+<div th:if="${success}" style="color: green;" th:text="${success}"></div>
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<h1>Отзывы о пользователе <span th:text="${reviewedUser.firstName + ' ' + reviewedUser.lastName}"></span></h1>
+
+<p><a th:href="@{/profile}">← Мой профиль</a></p>
+
+<hr>
+
+<!-- Информация о рейтинге -->
+<div style="margin-bottom: 20px;">
+    <strong>Средний рейтинг:</strong> <span th:text="${#numbers.formatDecimal(avgRating, 1, 1)}">0.0</span>/5
+    (на основе <span th:text="${totalReviews}">0</span> отзывов)
+</div>
+
+<!-- Кнопка "Оставить отзыв" (если это не текущий пользователь) -->
+<p th:if="${currentUserId != reviewedUser.id}">
+    <a th:href="@{/reviews/create/{userId}(userId=${reviewedUser.id})}">➕ Оставить отзыв об этом пользователе</a>
+</p>
+
+<hr>
+
+<h2>Все отзывы</h2>
+
+<p th:if="${#lists.isEmpty(reviews)}">(пока нет отзывов)</p>
+
+<ul>
+    <li th:each="review : ${reviews}">
+        <strong th:text="${review.author.firstName + ' ' + review.author.lastName}">Автор</strong>:
+        Оценка: <span th:text="${review.rating}">5</span>/5
+        <br>
+        <span th:text="${review.comment}">Текст отзыва...</span>
+        <br>
+        <small th:text="${#temporals.format(review.createdAt, 'dd.MM.yyyy')}">Дата</small>
+
+        <!-- Кнопки для своих отзывов -->
+        <div th:if="${review.author.id == currentUserId}" style="margin-top: 5px;">
+            <a th:href="@{/reviews/edit/{reviewId}(reviewId=${review.id})}" style="font-size: 12px;">✏ Редактировать</a>
+            |
+            <form th:action="@{/reviews/delete/{reviewId}(reviewId=${review.id})}" method="post" style="display: inline;" onsubmit="return confirm('Точно удалить отзыв?')">
+                <button type="submit" style="background: none; border: none; color: red; cursor: pointer; font-size: 12px;">🗑 Удалить</button>
+            </form>
+        </div>
+        <hr style="margin: 5px 0;">
+    </li>
+</ul>
+
+</body>
+</html>

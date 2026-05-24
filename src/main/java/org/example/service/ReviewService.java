@@ -1,172 +1,178 @@
 package org.example.service;
 
-import org.example.dto.CreateReviewRequest;
-import org.example.dto.RatingResponse;
-import org.example.dto.ReviewResponse;
 import org.example.entity.Review;
 import org.example.entity.User;
 import org.example.repository.ReviewRepository;
 import org.example.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class ReviewService {
 
-    private final ReviewRepository reviewRepository;
-    private final UserRepository userRepository;
-    // private final DealRepository dealRepository;
-    // private final ServiceRequestRepository serviceRequestRepository;
+    @Autowired
+    private ReviewRepository reviewRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     // Создать новый отзыв
     @Transactional
-    public ReviewResponse createReview(CreateReviewRequest request, Long authorId) {
-        // 1. Проверяем, существует ли автор отзыва
+    public Review createReview(Long authorId, Long userId, Integer rating, String comment, Long dealId) {
+        // Проверяем автора
         User author = userRepository.findById(authorId)
-                .orElseThrow(() -> new RuntimeException("Автор не найден с id: " + authorId));
+                .orElseThrow(() -> new RuntimeException("Автор не найден"));
 
-        // 2. Проверяем, существует ли получатель отзыва
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден с id: " + request.getUserId()));
+        // Проверяем получателя отзыва
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-        // 3. Нельзя оставить отзыв самому себе
-        if (author.getId().equals(user.getId())) {
+        // Нельзя отзыв самому себе
+        if (authorId.equals(userId)) {
             throw new RuntimeException("Нельзя оставить отзыв самому себе");
         }
 
-        // 4. Проверяем, не оставлял ли уже отзыв для этой сделки
-        if (request.getDealId() != null) {
-            boolean alreadyReviewed = reviewRepository.existsByAuthorAndDealId(author, request.getDealId());
-            if (alreadyReviewed) {
-                throw new RuntimeException("Вы уже оставили отзыв для этой сделки");
-            }
+        // Проверяем валидность оценки
+        if (rating < 1 || rating > 5) {
+            throw new RuntimeException("Оценка должна быть от 1 до 5");
         }
 
-        // 5. Создаем отзыв
+        // Создаём отзыв
         Review review = Review.builder()
                 .author(author)
                 .user(user)
-                .rating(request.getRating())
-                .comment(request.getComment())
+                .rating(rating)
+                .comment(comment != null ? comment : "")
+                .createdAt(LocalDateTime.now())
                 .build();
 
-        // TODO 6. Привязываем к сделке, если указана (нужен DealRepository)
-        //  if (request.getDealId() != null) {
-        //    Deal deal = dealRepository.findById(request.getDealId())
-        //            .orElseThrow(() -> new RuntimeException("Сделка не найдена с id: " + request.getDealId()));
-        //    review.setDeal(deal);
-        //}
-
-        // TODO 7. Привязываем к запросу услуги, если указан (нужен ServiceRequestRepository)
-//          if (request.getServiceRequestId() != null) {
-//            ServiceRequest serviceRequest = serviceRequestRepository.findById(request.getServiceRequestId())
-//                    .orElseThrow(() -> new RuntimeException("Запрос услуги не найден с id: " + request.getServiceRequestId()));
-//            review.setServiceRequest(serviceRequest);
-//        }
-
-        // 8. Сохраняем отзыв
         Review savedReview = reviewRepository.save(review);
 
-        // TODO 9. Обновляем рейтинг пользователя (через метод из User)
-        //  User.updateRating()
+        // Обновляем средний рейтинг пользователя
+        updateUserAverageRating(userId);
 
-        return mapToResponse(savedReview);
+        return savedReview;
     }
 
     // Получить все отзывы о пользователе
-    public List<ReviewResponse> getReviewsByUser(Long userId) {
+    public List<Review> getReviewsByUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден с id: " + userId));
-
-        return reviewRepository.findByUser(user).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        return reviewRepository.findByUser(user);
     }
 
-    // Получить все отзывы, написанные пользователем
-    public List<ReviewResponse> getReviewsByAuthor(Long authorId) {
+    //Получить все отзывы, написанные пользователем
+    public List<Review> getReviewsByAuthor(Long authorId) {
         User author = userRepository.findById(authorId)
-                .orElseThrow(() -> new RuntimeException("Автор не найден с id: " + authorId));
-
-        return reviewRepository.findByAuthor(author).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    // Получить рейтинг пользователя (средняя оценка + количество отзывов)
-    public RatingResponse getUserRating(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден с id: " + userId));
-
-        Double avgRating = reviewRepository.getAverageRatingForUser(user);
-        long totalReviews = reviewRepository.countByUser(user);
-
-        return RatingResponse.builder()
-                .userId(userId)
-                .averageRating(avgRating != null ? avgRating : 0.0)
-                .totalReviews(totalReviews)
-                .build();
+                .orElseThrow(() -> new RuntimeException("Автор не найден"));
+        return reviewRepository.findByAuthor(author);
     }
 
     // Получить отзыв по ID
-    public ReviewResponse getReviewById(Long id) {
-        Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Отзыв не найден с id: " + id));
-        return mapToResponse(review);
+    public Optional<Review> getReviewById(Long id) {
+        return reviewRepository.findById(id);
     }
 
-    // Обновить отзыв (ТОЛЬКО АВТОР)
+    // Обновить отзыв
     @Transactional
-    public ReviewResponse updateReview(Long id, CreateReviewRequest request, Long currentUserId) {
-        Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Отзыв не найден с id: " + id));
+    public Review updateReview(Long reviewId, Long currentUserId, Integer newRating, String newComment) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Отзыв не найден"));
 
-        // Проверяем, что текущий пользователь — автор отзыва
+        // Проверяем права
         if (!review.getAuthor().getId().equals(currentUserId)) {
             throw new RuntimeException("Только автор может редактировать отзыв");
         }
 
-        review.setRating(request.getRating());
-        review.setComment(request.getComment());
-
-        Review updatedReview = reviewRepository.save(review);
-        return mapToResponse(updatedReview);
-    }
-
-    // Удалить отзыв (ТОЛЬКО АВТОР ИЛИ АДМИН)
-    @Transactional
-    public void deleteReview(Long id, Long currentUserId, boolean isAdmin) {
-        Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Отзыв не найден с id: " + id));
-
-        // Проверяем права: либо автор, либо админ
-        if (!review.getAuthor().getId().equals(currentUserId) && !isAdmin) {
-            throw new RuntimeException("Нет прав для удаления этого отзыва");
+        if (newRating < 1 || newRating > 5) {
+            throw new RuntimeException("Оценка должна быть от 1 до 5");
         }
 
-        reviewRepository.delete(review);
+        review.setRating(newRating);
+        if (newComment != null) {
+            review.setComment(newComment);
+        }
+
+        Review updatedReview = reviewRepository.save(review);
+
+        // Обновляем рейтинг пользователя
+        updateUserAverageRating(review.getUser().getId());
+
+        return updatedReview;
     }
 
-    // Маппинг Review -> ReviewResponse
-    private ReviewResponse mapToResponse(Review review) {
-        return ReviewResponse.builder()
-                .id(review.getId())
-                .authorId(review.getAuthor().getId())
-                .authorFirstName(review.getAuthor().getFirstName())
-                .authorLastName(review.getAuthor().getLastName())
-                .userId(review.getUser().getId())
-                .userFirstName(review.getUser().getFirstName())
-                .userLastName(review.getUser().getLastName())
-                .rating(review.getRating())
-                .comment(review.getComment())
-                .createdAt(review.getCreatedAt())
-                .dealId(review.getDeal() != null ? review.getDeal().getId() : null)
-                .serviceRequestId(review.getServiceRequest() != null ? review.getServiceRequest().getId() : null)
-                .build();
+    // Удалить отзыв
+    @Transactional
+    public void deleteReview(Long reviewId, Long currentUserId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Отзыв не найден"));
+
+        // Проверяем права
+        if (!review.getAuthor().getId().equals(currentUserId)) {
+            throw new RuntimeException("Только автор может удалить отзыв");
+        }
+
+        Long userId = review.getUser().getId();
+        reviewRepository.delete(review);
+
+        // Обновляем рейтинг пользователя
+        updateUserAverageRating(userId);
+    }
+
+    //Получить информацию о рейтинге пользователя
+    public RatingInfo getUserRating(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        List<Review> reviews = reviewRepository.findByUser(user);
+
+        if (reviews.isEmpty()) {
+            return new RatingInfo(0.0, 0L);
+        }
+
+        double avg = reviews.stream()
+                .mapToDouble(Review::getRating)
+                .average()
+                .orElse(0.0);
+
+        return new RatingInfo(avg, (long) reviews.size());
+    }
+
+    // Обновить поле rating в таблице User
+    private void updateUserAverageRating(Long userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null) {
+            List<Review> reviews = reviewRepository.findByUser(user);
+            if (reviews.isEmpty()) {
+                user.setRating(0.0f);
+            } else {
+                double avg = reviews.stream()
+                        .mapToDouble(Review::getRating)
+                        .average()
+                        .orElse(0.0);
+                user.setRating((float) avg);
+            }
+            userRepository.save(user);
+        }
+    }
+
+
+    // Вспомогательный класс для рейтинга
+    public static class RatingInfo {
+        private final double averageRating;
+        private final long totalReviews;
+
+        public RatingInfo(double averageRating, long totalReviews) {
+            this.averageRating = averageRating;
+            this.totalReviews = totalReviews;
+        }
+
+        public double getAverageRating() { return averageRating; }
+        public long getTotalReviews() { return totalReviews; }
     }
 }
