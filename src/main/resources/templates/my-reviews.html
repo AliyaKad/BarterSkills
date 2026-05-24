@@ -19,7 +19,7 @@
 
 <ul>
   <li th:each="review : ${reviews}">
-    <strong>О ком:</strong> <span th:text="${review.user.firstName + ' ' + review.user.lastName}">Пользователь</span>
+    <strong>О ком:</strong> <a th:href="@{/profile/{userId}(userId=${review.user.id})}" th:text="${review.user.firstName + ' ' + review.user.lastName}">Пользователь</a>
     <br>
     <strong>Оценка:</strong> <span th:text="${review.rating}">5</span>/5
     <br>

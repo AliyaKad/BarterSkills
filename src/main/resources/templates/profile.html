@@ -149,7 +149,7 @@
 <!-- Список отзывов с кнопками действий -->
 <ul>
     <li th:each="review : ${user.reviews}">
-        <strong th:text="${review.author.firstName + ' ' + review.author.lastName}">Имя автора</strong>:
+        <a th:href="@{/profile/{userId}(userId=${review.author.id})}" th:text="${review.author.firstName + ' ' + review.author.lastName}">Имя автора</a>:
         Оценка: <span th:text="${review.rating}">5</span>/5
         <br>
         <span th:text="${review.comment}">Текст отзыва...</span>

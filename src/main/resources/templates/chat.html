@@ -133,7 +133,9 @@
     <div class="chat-header">
         <div class="avatar" th:text="${#strings.substring(recipient.firstName, 0, 1)}">A</div>
         <div>
-            <h2 th:text="${recipient.firstName} + ' ' + ${recipient.lastName}">Имя Фамилия</h2>
+            <a th:href="@{/profile/{userId}(userId=${recipient.id})}" style="text-decoration: none; color: inherit;">
+                <h2 th:text="${recipient.firstName} + ' ' + ${recipient.lastName}" style="margin: 0;">Имя Фамилия</h2>
+            </a>
             <span class="status">онлайн</span>
         </div>
     </div>

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -135,5 +136,44 @@ public class AuthController {
     public String logout(HttpSession session) {
         session.invalidate();
         return "redirect:/login";
+    }
+
+    // Просмотр профиля другого пользователя (только чтение)
+    @GetMapping("/profile/{userId}")
+    public String viewOtherProfile(@PathVariable Long userId,
+                                   HttpSession session,
+                                   Model model) {
+        Long currentUserId = (Long) session.getAttribute("userId");
+        if (currentUserId == null) {
+            return "redirect:/login";
+        }
+
+        // Не даём смотреть свой профиль через этот URL (редирект на /profile)
+        if (currentUserId.equals(userId)) {
+            return "redirect:/profile";
+        }
+
+        var userOpt = userService.getUserWithDetails(userId);
+        if (userOpt.isEmpty()) {
+            return "redirect:/profile";
+        }
+
+        User viewedUser = userOpt.get();
+        model.addAttribute("user", viewedUser);
+        model.addAttribute("isOwnProfile", false);
+        model.addAttribute("currentUserId", currentUserId);
+
+        // Рейтинг
+        if (viewedUser.getReviews() != null && !viewedUser.getReviews().isEmpty()) {
+            double avgRating = viewedUser.getReviews().stream()
+                    .mapToDouble(r -> r.getRating() != null ? r.getRating() : 0)
+                    .average()
+                    .orElse(0.0);
+            model.addAttribute("avgRating", String.format("%.1f", avgRating));
+        } else {
+            model.addAttribute("avgRating", "0.0");
+        }
+
+        return "profile-view";
     }
 }
