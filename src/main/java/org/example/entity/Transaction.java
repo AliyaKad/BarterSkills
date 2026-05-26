@@ -17,7 +17,7 @@ public class Transaction {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "deal_id")
+    @JoinColumn(name = "deal_id", nullable = true)
     private Deal deal;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -36,7 +36,15 @@ public class Transaction {
     private TransactionType type;
 
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 
     private String description;
+
+    @PrePersist
+    void onCreate() {
+        if (timestamp == null) {
+            timestamp = LocalDateTime.now();
+        }
+    }
 }

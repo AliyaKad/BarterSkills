@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -147,14 +148,7 @@ public class SkillCoinService {
     }
 
     private void saveBonusTransaction(User user, int amount, String description) {
-        Transaction transaction = Transaction.builder()
-                .fromUser(user)
-                .toUser(user)
-                .amount(amount)
-                .type(TransactionType.BONUS)
-                .description(description)
-                .build();
-        transactionRepository.save(transaction);
+        transactionRepository.save(newTransaction(null, user, user, amount, TransactionType.BONUS, description));
     }
 
     private User reloadUser(Long userId) {
@@ -164,14 +158,19 @@ public class SkillCoinService {
 
     private void saveTransaction(Deal deal, User fromUser, User toUser, int amount,
                                TransactionType type, String description) {
-        Transaction transaction = Transaction.builder()
+        transactionRepository.save(newTransaction(deal, fromUser, toUser, amount, type, description));
+    }
+
+    private Transaction newTransaction(Deal deal, User fromUser, User toUser, int amount,
+                                       TransactionType type, String description) {
+        return Transaction.builder()
                 .deal(deal)
                 .fromUser(fromUser)
                 .toUser(toUser)
                 .amount(amount)
                 .type(type)
+                .timestamp(LocalDateTime.now())
                 .description(description)
                 .build();
-        transactionRepository.save(transaction);
     }
 }
