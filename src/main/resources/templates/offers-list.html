@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Предложения услуг — BarterSkills</title>
+</head>
+<body>
+<h1>Предложения услуг</h1>
+
+<p>
+    <a href="/profile">Профиль</a> |
+    <a href="/offers/new">+ Создать предложение</a> |
+    <a href="/requests">Запросы на услуги</a>
+</p>
+
+<hr>
+
+<h2>Поиск и фильтры</h2>
+<form action="/offers" method="get">
+    <p>
+        <label>Текст:<br>
+            <input type="text" name="q" th:value="${q}" placeholder="Название или описание">
+        </label>
+    </p>
+    <p>
+        <label>Категория:<br>
+            <select name="category">
+                <option value="">— любая —</option>
+                <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}"
+                        th:selected="${cat == selectedCategory}"></option>
+            </select>
+        </label>
+    </p>
+    <p>
+        <label>Цена от (SC):<br>
+            <input type="number" name="minPrice" min="0" th:value="${minPrice}">
+        </label>
+        &nbsp;
+        <label>до:<br>
+            <input type="number" name="maxPrice" min="0" th:value="${maxPrice}">
+        </label>
+    </p>
+    <p>
+        <label>Статус:<br>
+            <select name="status">
+                <option value="">ACTIVE (по умолчанию)</option>
+                <option th:each="st : ${statuses}" th:value="${st}" th:text="${st}"
+                        th:selected="${st == selectedStatus}"></option>
+            </select>
+        </label>
+    </p>
+    <button type="submit">Найти</button>
+    <a href="/offers">Сбросить</a>
+</form>
+
+<hr>
+
+<p th:if="${#lists.isEmpty(offers)}">Ничего не найдено.</p>
+
+<ul>
+    <li th:each="offer : ${offers}" style="margin-bottom: 1em;">
+        <a th:href="@{/offers/{id}(id=${offer.id})}">
+            <strong th:text="${offer.title}">Название</strong>
+        </a>
+        — <span th:text="${offer.category}">IT</span> —
+        <span th:text="${offer.priceInSkillCoins}">0</span> SC —
+        <span th:text="${offer.status}">ACTIVE</span>
+        <br>
+        <small th:text="${offer.description}">Описание</small>
+        <br>
+        <small>
+            Автор:
+            <a th:href="@{/profile/{userId}(userId=${offer.createdBy.id})}"
+               th:text="${offer.createdBy.firstName + ' ' + offer.createdBy.lastName}">Имя</a>
+            ·
+            <span th:text="${#temporals.format(offer.createdAt, 'dd.MM.yyyy HH:mm')}">дата</span>
+        </small>
+    </li>
+</ul>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Мои сделки — BarterSkills</title>
+</head>
+<body>
+<h1>Мои сделки</h1>
+
+<p>
+    <a href="/profile">Профиль</a> |
+    <a href="/offers">Предложения</a> |
+    <a href="/requests">Запросы</a>
+</p>
+
+<div th:if="${success}" style="color: green;" th:text="${success}"></div>
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<hr>
+
+<p th:if="${#lists.isEmpty(deals)}">У вас пока нет сделок.</p>
+
+<ul>
+    <li th:each="deal : ${deals}" style="margin-bottom: 1em;">
+        <a th:href="@{/deals/{id}(id=${deal.id})}">
+            <strong>Сделка #<span th:text="${deal.id}"></span></strong>
+        </a>
+        — <span th:text="${deal.status}">PROPOSED</span> —
+        <span th:text="${deal.amount}">0</span> SC
+        <br>
+        <span th:if="${deal.offer != null}">
+            По предложению: <span th:text="${deal.offer.title}"></span>
+        </span>
+        <span th:if="${deal.request != null}">
+            По запросу: <span th:text="${deal.request.title}"></span>
+        </span>
+        <br>
+        <small>
+            Заказчик:
+            <span th:text="${deal.customer.firstName + ' ' + deal.customer.lastName}"></span>
+            · Исполнитель:
+            <span th:text="${deal.executor.firstName + ' ' + deal.executor.lastName}"></span>
+            ·
+            <span th:text="${#temporals.format(deal.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+        </small>
+        <br>
+        <small th:if="${deal.customer.id == currentUserId}">Ваша роль: заказчик</small>
+        <small th:if="${deal.executor.id == currentUserId}">Ваша роль: исполнитель</small>
+    </li>
+</ul>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>История SkillCoin — BarterSkills</title>
+</head>
+<body>
+<h1>История SkillCoin</h1>
+
+<p>
+    <a href="/profile">← Профиль</a> |
+    <a href="/deals">Сделки</a>
+</p>
+
+<p>
+    <strong>Доступно:</strong> <span th:text="${user.skillCoinBalance}">0</span> SC |
+    <strong>Заморожено:</strong> <span th:text="${user.skillCoinHeld}">0</span> SC
+</p>
+
+<hr>
+
+<p th:if="${#lists.isEmpty(transactions)}">Транзакций пока нет.</p>
+
+<table th:if="${!#lists.isEmpty(transactions)}" border="1" cellpadding="8" cellspacing="0">
+    <thead>
+    <tr>
+        <th>Дата</th>
+        <th>Тип</th>
+        <th>Сумма</th>
+        <th>Описание</th>
+        <th>Контрагент</th>
+        <th>Сделка</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="tx : ${transactions}">
+        <td th:text="${#temporals.format(tx.timestamp, 'dd.MM.yyyy HH:mm')}"></td>
+        <td>
+            <span th:switch="${tx.type.name()}">
+                <span th:case="'HOLD'">Заморозка</span>
+                <span th:case="'TRANSFER'">Перевод</span>
+                <span th:case="'REFUND'">Возврат</span>
+                <span th:case="'BONUS'">Бонус</span>
+                <span th:case="*" th:text="${tx.type}"></span>
+            </span>
+        </td>
+        <td th:text="${tx.amount} + ' SC'"></td>
+        <td th:text="${tx.description}"></td>
+        <td>
+            <span th:if="${tx.fromUser.id == currentUserId and tx.toUser.id != currentUserId}">
+                →
+                <a th:href="@{/profile/{userId}(userId=${tx.toUser.id})}"
+                   th:text="${tx.toUser.firstName + ' ' + tx.toUser.lastName}"></a>
+            </span>
+            <span th:if="${tx.toUser.id == currentUserId and tx.fromUser.id != currentUserId}">
+                ←
+                <a th:href="@{/profile/{userId}(userId=${tx.fromUser.id})}"
+                   th:text="${tx.fromUser.firstName + ' ' + tx.fromUser.lastName}"></a>
+            </span>
+            <span th:if="${tx.fromUser.id == currentUserId and tx.toUser.id == currentUserId}">
+                (ваш счёт)
+            </span>
+        </td>
+        <td>
+            <a th:if="${tx.deal != null}" th:href="@{/deals/{id}(id=${tx.deal.id})}"
+               th:text="'#' + ${tx.deal.id}"></a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

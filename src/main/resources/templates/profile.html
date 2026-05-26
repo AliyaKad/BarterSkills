@@ -22,7 +22,12 @@
 <p><strong>Email:</strong> <span th:text="${user.email}"></span></p>
 <p><strong>Город:</strong> <span th:text="${user.city}"></span></p>
 <p><strong>О себе:</strong> <span th:text="${user.bio}"></span></p>
-<p><strong>Баланс SkillCoin:</strong> <span th:text="${user.skillCoinBalance}"></span></p>
+<p>
+    <strong>SkillCoin:</strong>
+    доступно <span th:text="${availableBalance}">0</span> SC,
+    заморожено <span th:text="${heldBalance}">0</span> SC
+    (<a href="/transactions">история транзакций</a>)
+</p>
 <p><strong>Рейтинг:</strong> <span th:text="${avgRating}"></span></p>
 <p><strong>Проверен:</strong> <span th:text="${user.isVerified} ? 'Да' : 'Нет'"></span></p>
 
@@ -99,9 +104,12 @@
 <p>
     <span th:if="${#lists.isEmpty(user.serviceOffers)}">(пока нет предложений)</span>
 </p>
+<p><a href="/offers">🔍 Смотреть все предложения</a></p>
 <ul>
     <li th:each="offer : ${user.serviceOffers}">
-        <strong th:text="${offer.title}">Название</strong>
+        <a th:href="@{/offers/{id}(id=${offer.id})}">
+            <strong th:text="${offer.title}">Название</strong>
+        </a>
         (<span th:text="${offer.category}">Категория</span>) —
         <span th:text="${offer.priceInSkillCoins}">0</span> SC —
         Статус: <span th:text="${offer.status}">ACTIVE</span>
@@ -117,9 +125,12 @@
 <p>
     <span th:if="${#lists.isEmpty(user.serviceRequests)}">(пока нет запросов)</span>
 </p>
+<p><a href="/requests">🔍 Смотреть все запросы</a></p>
 <ul>
     <li th:each="req : ${user.serviceRequests}">
-        <strong th:text="${req.title}">Название</strong>
+        <a th:href="@{/requests/{id}(id=${req.id})}">
+            <strong th:text="${req.title}">Название</strong>
+        </a>
         (<span th:text="${req.category}">Категория</span>) —
         до <span th:text="${req.maxPrice}">0</span> SC —
         Статус: <span th:text="${req.status}">OPEN</span>
@@ -128,6 +139,11 @@
     </li>
 </ul>
 <p><a href="/requests/new">+ Создать новый запрос</a></p>
+
+<hr>
+
+<h2>Мои сделки</h2>
+<p><a href="/deals">📋 Все сделки (заказчик / исполнитель)</a></p>
 
 <hr>
 
@@ -169,6 +185,15 @@
 </ul>
 <hr>
 <div style="margin-top: 20px;">
+    <a href="/offers" style="display: inline-block; padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 8px; margin-right: 10px;">
+        Предложения услуг
+    </a>
+    <a href="/requests" style="display: inline-block; padding: 10px 20px; background: #FF9800; color: white; text-decoration: none; border-radius: 8px; margin-right: 10px;">
+        Запросы на услуги
+    </a>
+    <a href="/deals" style="display: inline-block; padding: 10px 20px; background: #9C27B0; color: white; text-decoration: none; border-radius: 8px; margin-right: 10px;">
+        Мои сделки
+    </a>
     <a href="/chat" style="display: inline-block; padding: 10px 20px; background: #2196F3; color: white; text-decoration: none; border-radius: 8px; margin-right: 10px;">
         💬 Мои чаты
     </a>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${request.title} + ' — BarterSkills'">Запрос</title>
+</head>
+<body>
+<h1 th:text="${request.title}">Название</h1>
+
+<p>
+    <a href="/requests">← Все запросы</a> |
+    <a href="/profile">Профиль</a>
+</p>
+
+<hr>
+
+<p><strong>Категория:</strong> <span th:text="${request.category}"></span></p>
+<p><strong>Бюджет:</strong>
+    <span th:if="${request.maxPrice != null}" th:text="${request.maxPrice} + ' SkillCoin'"></span>
+    <span th:if="${request.maxPrice == null}">не указан</span>
+</p>
+<p><strong>Статус:</strong> <span th:text="${request.status}"></span></p>
+<p><strong>Описание:</strong></p>
+<p th:text="${request.description}">—</p>
+
+<p>
+    <strong>Заказчик:</strong>
+    <a th:if="${request.requestedBy.id != currentUserId}"
+       th:href="@{/profile/{userId}(userId=${request.requestedBy.id})}"
+       th:text="${request.requestedBy.firstName + ' ' + request.requestedBy.lastName}">Имя</a>
+    <span th:if="${request.requestedBy.id == currentUserId}">вы</span>
+</p>
+
+<p><strong>Создано:</strong>
+    <span th:text="${#temporals.format(request.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+</p>
+
+<hr th:if="${request.requestedBy.id != currentUserId and request.status.name() == 'OPEN'}">
+
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<h2 th:if="${request.requestedBy.id != currentUserId and request.status.name() == 'OPEN'}">Откликнуться на запрос</h2>
+<p th:if="${request.requestedBy.id != currentUserId and request.status.name() == 'OPEN'}">
+    Вы станете исполнителем, заказчик — автор запроса.
+</p>
+<form th:if="${request.requestedBy.id != currentUserId and request.status.name() == 'OPEN'}"
+      th:action="@{/deals/from-request/{id}(id=${request.id})}" method="post">
+    <p>
+        <label>Сумма (SkillCoin):<br>
+            <input type="number" name="amount" min="0" th:value="${request.maxPrice != null ? request.maxPrice : 0}">
+        </label>
+    </p>
+    <button type="submit">Отправить отклик (сделку)</button>
+</form>
+</body>
+</html>

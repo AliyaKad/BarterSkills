@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Новый запрос — BarterSkills</title>
+</head>
+<body>
+<h1>Создать запрос на услугу</h1>
+
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<form action="/requests/create" method="post">
+    <p>
+        <label>Название *<br>
+            <input type="text" name="title" required maxlength="200" placeholder="Например: Нужна помощь с переездом">
+        </label>
+    </p>
+    <p>
+        <label>Описание<br>
+            <textarea name="description" rows="5" cols="50" placeholder="Что именно требуется"></textarea>
+        </label>
+    </p>
+    <p>
+        <label>Категория<br>
+            <select name="category">
+                <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}"></option>
+            </select>
+        </label>
+    </p>
+    <p>
+        <label>Максимальный бюджет (SkillCoin), необязательно<br>
+            <input type="number" name="maxPrice" min="0" placeholder="Оставьте пустым, если не важно">
+        </label>
+    </p>
+    <button type="submit">Опубликовать</button>
+    <a href="/profile">Отмена</a>
+</form>
+
+<p><a href="/requests">← Все запросы</a></p>
+</body>
+</html>

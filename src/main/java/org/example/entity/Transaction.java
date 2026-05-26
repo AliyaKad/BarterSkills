@@ -16,8 +16,9 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "deal_id", nullable = false)
-    private Long dealId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deal_id", nullable = true)
+    private Deal deal;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_user_id", nullable = false)
@@ -35,32 +36,15 @@ public class Transaction {
     private TransactionType type;
 
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 
     private String description;
 
-    // Связь с Deal
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "deal_id", insertable = false, updatable = false)
-    private Deal deal;
-
-    public Boolean execute() {
-        try {
-            fromUser.spendSkillCoins(amount);
-            toUser.addSkillCoins(amount);
-            return true;
-        } catch (IllegalStateException e) {
-            return false;
+    @PrePersist
+    void onCreate() {
+        if (timestamp == null) {
+            timestamp = LocalDateTime.now();
         }
     }
-
-    public void rollback() {
-        toUser.spendSkillCoins(amount);
-        fromUser.addSkillCoins(amount);
-    }
-}
-
-enum TransactionType {
-    CREDIT,   // Начисление
-    DEBIT     // Списание
 }
