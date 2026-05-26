@@ -40,8 +40,6 @@ public class User {
     @Builder.Default
     private Integer skillCoinHeld = 0;
 
-<<<<<<< HEAD
-=======
     @Column(name = "bonus_skills_can_offer_granted")
     @Builder.Default
     private Boolean bonusSkillsCanOfferGranted = false;
@@ -50,7 +48,6 @@ public class User {
     @Builder.Default
     private Boolean bonusSkillsNeededGranted = false;
 
->>>>>>> 4231912c2b2a9be697fc4e8e028a5edca4be66d7
     @Column(name = "is_verified")
     private Boolean isVerified = false;
 

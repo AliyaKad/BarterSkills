@@ -85,19 +85,8 @@ public class UserService {
     public int addSkillCanOffer(Long userId, String skill) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-<<<<<<< HEAD
-
-        if (user.getSkillsCanOffer() == null) {
-            user.setSkillsCanOffer(new java.util.ArrayList<>());
-        }
-
-        if (!user.getSkillsCanOffer().contains(skill)) {
-            user.getSkillsCanOffer().add(skill);
-            userRepository.save(user);
-=======
         if (user.getSkillsCanOffer().contains(skill)) {
             return 0;
->>>>>>> 4231912c2b2a9be697fc4e8e028a5edca4be66d7
         }
         user.getSkillsCanOffer().add(skill);
         userRepository.save(user);
@@ -108,19 +97,8 @@ public class UserService {
     public int addSkillNeeded(Long userId, String skill) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-<<<<<<< HEAD
-
-        if (user.getSkillsNeeded() == null) {
-            user.setSkillsNeeded(new java.util.ArrayList<>());
-        }
-
-        if (!user.getSkillsNeeded().contains(skill)) {
-            user.getSkillsNeeded().add(skill);
-            userRepository.save(user);
-=======
         if (user.getSkillsNeeded().contains(skill)) {
             return 0;
->>>>>>> 4231912c2b2a9be697fc4e8e028a5edca4be66d7
         }
         user.getSkillsNeeded().add(skill);
         userRepository.save(user);
