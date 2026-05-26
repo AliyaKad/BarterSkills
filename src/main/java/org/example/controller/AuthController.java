@@ -2,6 +2,7 @@ package org.example.controller;
 
 import jakarta.servlet.http.HttpSession;
 import org.example.entity.User;
+import org.example.service.SkillCoinService;
 import org.example.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -45,10 +46,13 @@ public class AuthController {
                                   @RequestParam String firstName,
                                   @RequestParam String lastName,
                                   HttpSession session,
-                                  Model model) {
+                                  Model model,
+                                  RedirectAttributes redirectAttrs) {
         try {
             User newUser = userService.registerUser(email, password, firstName, lastName);
             session.setAttribute("userId", newUser.getId());
+            redirectAttrs.addFlashAttribute("success",
+                    "Регистрация успешна! Начислено " + SkillCoinService.REGISTRATION_BONUS + " SC.");
             return "redirect:/profile";
         } catch (RuntimeException e) {
             model.addAttribute("error", e.getMessage());
@@ -77,6 +81,9 @@ public class AuthController {
             } else {
                 model.addAttribute("avgRating", "0.0");
             }
+
+            model.addAttribute("availableBalance", user.getSkillCoinBalance());
+            model.addAttribute("heldBalance", user.getSkillCoinHeld());
 
             return "profile";
         }
@@ -112,8 +119,13 @@ public class AuthController {
         if (userId == null) return "redirect:/login";
 
         if (skill != null && !skill.trim().isEmpty()) {
-            userService.addSkillCanOffer(userId, skill.trim());
-            redirectAttrs.addFlashAttribute("success", "Навык добавлен!");
+            int bonus = userService.addSkillCanOffer(userId, skill.trim());
+            if (bonus > 0) {
+                redirectAttrs.addFlashAttribute("success",
+                        "Навык добавлен! Начислено " + bonus + " SC за первые три навыка «Могу предложить».");
+            } else {
+                redirectAttrs.addFlashAttribute("success", "Навык добавлен!");
+            }
         }
         return "redirect:/profile";
     }
@@ -126,8 +138,13 @@ public class AuthController {
         if (userId == null) return "redirect:/login";
 
         if (skill != null && !skill.trim().isEmpty()) {
-            userService.addSkillNeeded(userId, skill.trim());
-            redirectAttrs.addFlashAttribute("success", "Потребность добавлена!");
+            int bonus = userService.addSkillNeeded(userId, skill.trim());
+            if (bonus > 0) {
+                redirectAttrs.addFlashAttribute("success",
+                        "Потребность добавлена! Начислено " + bonus + " SC за первые три пункта «Мне требуется».");
+            } else {
+                redirectAttrs.addFlashAttribute("success", "Потребность добавлена!");
+            }
         }
         return "redirect:/profile";
     }
