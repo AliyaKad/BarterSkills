@@ -44,6 +44,18 @@ public class Deal {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "customer_confirmed")
+    @Builder.Default
+    private Boolean customerConfirmed = false;
+
+    @Column(name = "executor_confirmed")
+    @Builder.Default
+    private Boolean executorConfirmed = false;
+
+    @Column(name = "coins_held")
+    @Builder.Default
+    private Boolean coinsHeld = false;
+
     // Связи
     @OneToMany(mappedBy = "deal", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<Message> messages = new java.util.ArrayList<>();
@@ -60,13 +72,24 @@ public class Deal {
     }
 
     public void accept() {
-        this.status = DealStatus.ACCEPTED;
+        this.status = DealStatus.IN_PROGRESS;
     }
 
     public void complete() {
         this.status = DealStatus.COMPLETED;
         this.completionDate = LocalDateTime.now();
-        // Запускает транзакцию токенов
+    }
+
+    public void confirmByCustomer() {
+        this.customerConfirmed = true;
+    }
+
+    public void confirmByExecutor() {
+        this.executorConfirmed = true;
+    }
+
+    public boolean isFullyConfirmed() {
+        return Boolean.TRUE.equals(customerConfirmed) && Boolean.TRUE.equals(executorConfirmed);
     }
 
     public void cancel() {

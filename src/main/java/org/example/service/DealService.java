@@ -31,6 +31,9 @@ public class DealService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private SkillCoinService skillCoinService;
+
     @Transactional
     public Deal createFromOffer(Long offerId, Long customerId, Integer amount) {
         ServiceOffer offer = offerRepository.findById(offerId)
@@ -114,6 +117,7 @@ public class DealService {
             throw new RuntimeException("Вы не можете принять эту сделку");
         }
 
+        skillCoinService.holdForDeal(deal);
         deal.accept();
 
         if (deal.getRequest() != null) {
@@ -133,6 +137,7 @@ public class DealService {
             throw new RuntimeException("Сделку нельзя отменить");
         }
 
+        skillCoinService.refundHold(deal);
         deal.cancel();
         reopenRequestIfNeeded(deal);
 
@@ -140,25 +145,42 @@ public class DealService {
     }
 
     @Transactional
-    public Deal completeDeal(Long dealId, Long userId) {
+    public Deal confirmCompletion(Long dealId, Long userId) {
         Deal deal = loadDealForParticipant(dealId, userId);
 
-        if (deal.getStatus() != DealStatus.ACCEPTED && deal.getStatus() != DealStatus.IN_PROGRESS) {
-            throw new RuntimeException("Завершить можно только принятую сделку");
+        if (deal.getStatus() != DealStatus.IN_PROGRESS && deal.getStatus() != DealStatus.ACCEPTED) {
+            throw new RuntimeException("Подтвердить завершение можно только для активной сделки");
+        }
+        if (!canConfirmCompletion(deal, userId)) {
+            throw new RuntimeException("Вы не можете подтвердить завершение сейчас");
         }
 
-        deal.complete();
+        if (deal.getCustomer().getId().equals(userId)) {
+            deal.confirmByCustomer();
+        } else {
+            deal.confirmByExecutor();
+        }
 
-        if (deal.getOffer() != null) {
-            ServiceOffer offer = deal.getOffer();
-            offer.setStatus(OfferStatus.COMPLETED);
-            offerRepository.save(offer);
+        if (deal.isFullyConfirmed()) {
+            skillCoinService.finalizeDealPayment(deal);
+            deal.complete();
+            markRelatedEntitiesCompleted(deal);
         }
-        if (deal.getRequest() != null) {
-            ServiceRequest request = deal.getRequest();
-            request.setStatus(RequestStatus.DONE);
-            requestRepository.save(request);
+
+        return dealRepository.save(deal);
+    }
+
+    @Transactional
+    public Deal disputeDeal(Long dealId, Long userId) {
+        Deal deal = loadDealForParticipant(dealId, userId);
+
+        if (!canDispute(deal, userId)) {
+            throw new RuntimeException("Спор можно открыть только для активной сделки с замороженными монетами");
         }
+
+        skillCoinService.refundHold(deal);
+        deal.dispute();
+        reopenRequestIfNeeded(deal);
 
         return dealRepository.save(deal);
     }
@@ -181,15 +203,32 @@ public class DealService {
             return false;
         }
         return deal.getStatus() != DealStatus.COMPLETED
-                && deal.getStatus() != DealStatus.CANCELLED;
+                && deal.getStatus() != DealStatus.CANCELLED
+                && deal.getStatus() != DealStatus.DISPUTED;
     }
 
-    public boolean canComplete(Deal deal, Long userId) {
+    public boolean canConfirmCompletion(Deal deal, Long userId) {
         if (!isParticipant(deal, userId)) {
             return false;
         }
-        return deal.getStatus() == DealStatus.ACCEPTED
-                || deal.getStatus() == DealStatus.IN_PROGRESS;
+        if (deal.getStatus() != DealStatus.IN_PROGRESS && deal.getStatus() != DealStatus.ACCEPTED) {
+            return false;
+        }
+        if (deal.getCustomer().getId().equals(userId)) {
+            return !Boolean.TRUE.equals(deal.getCustomerConfirmed());
+        }
+        if (deal.getExecutor().getId().equals(userId)) {
+            return !Boolean.TRUE.equals(deal.getExecutorConfirmed());
+        }
+        return false;
+    }
+
+    public boolean canDispute(Deal deal, Long userId) {
+        if (!isParticipant(deal, userId)) {
+            return false;
+        }
+        return (deal.getStatus() == DealStatus.IN_PROGRESS || deal.getStatus() == DealStatus.ACCEPTED)
+                && Boolean.TRUE.equals(deal.getCoinsHeld());
     }
 
     public boolean isParticipant(Deal deal, Long userId) {
@@ -212,6 +251,19 @@ public class DealService {
             throw new RuntimeException("Сумма не может быть отрицательной");
         }
         return value;
+    }
+
+    private void markRelatedEntitiesCompleted(Deal deal) {
+        if (deal.getOffer() != null) {
+            ServiceOffer offer = deal.getOffer();
+            offer.setStatus(OfferStatus.COMPLETED);
+            offerRepository.save(offer);
+        }
+        if (deal.getRequest() != null) {
+            ServiceRequest request = deal.getRequest();
+            request.setStatus(RequestStatus.DONE);
+            requestRepository.save(request);
+        }
     }
 
     private void reopenRequestIfNeeded(Deal deal) {

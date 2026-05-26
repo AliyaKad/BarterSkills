@@ -14,8 +14,12 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private SkillCoinService skillCoinService;
+
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    @Transactional
     public User registerUser(String email, String password, String firstName, String lastName) {
         if (userRepository.existsByEmail(email)) {
             throw new RuntimeException("Пользователь с таким email уже существует");
@@ -27,8 +31,11 @@ public class UserService {
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setSkillCoinBalance(0);
+        user.setSkillCoinHeld(0);
 
-        return userRepository.save(user);
+        user = userRepository.save(user);
+        skillCoinService.grantRegistrationBonus(user);
+        return userRepository.findById(user.getId()).orElse(user);
     }
 
     public Optional<User> loginUser(String email, String password) {
@@ -75,24 +82,26 @@ public class UserService {
     }
 
     @Transactional
-    public User addSkillCanOffer(Long userId, String skill) {
+    public int addSkillCanOffer(Long userId, String skill) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-        if (!user.getSkillsCanOffer().contains(skill)) {
-            user.getSkillsCanOffer().add(skill);
-            userRepository.save(user);
+        if (user.getSkillsCanOffer().contains(skill)) {
+            return 0;
         }
-        return user;
+        user.getSkillsCanOffer().add(skill);
+        userRepository.save(user);
+        return skillCoinService.tryGrantSkillsCanOfferBonus(user);
     }
 
     @Transactional
-    public User addSkillNeeded(Long userId, String skill) {
+    public int addSkillNeeded(Long userId, String skill) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-        if (!user.getSkillsNeeded().contains(skill)) {
-            user.getSkillsNeeded().add(skill);
-            userRepository.save(user);
+        if (user.getSkillsNeeded().contains(skill)) {
+            return 0;
         }
-        return user;
+        user.getSkillsNeeded().add(skill);
+        userRepository.save(user);
+        return skillCoinService.tryGrantSkillsNeededBonus(user);
     }
 }

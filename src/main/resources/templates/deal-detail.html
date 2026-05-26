@@ -19,6 +19,9 @@
 
 <p><strong>Статус:</strong> <span th:text="${deal.status}"></span></p>
 <p><strong>Сумма:</strong> <span th:text="${deal.amount}"></span> SkillCoin</p>
+<p th:if="${deal.coinsHeld}">
+    <strong>Монеты:</strong> заморожены у заказчика до завершения или спора
+</p>
 
 <p th:if="${deal.offer != null}">
     <strong>Предложение:</strong>
@@ -44,6 +47,12 @@
        th:text="${deal.executor.firstName + ' ' + deal.executor.lastName}"></a>
 </p>
 
+<p th:if="${deal.status.name() == 'IN_PROGRESS' or deal.status.name() == 'ACCEPTED'}">
+    <strong>Подтверждение завершения:</strong>
+    заказчик — <span th:text="${deal.customerConfirmed} ? '✅' : '⏳'"></span>,
+    исполнитель — <span th:text="${deal.executorConfirmed} ? '✅' : '⏳'"></span>
+</p>
+
 <p><strong>Создана:</strong>
     <span th:text="${#temporals.format(deal.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
 </p>
@@ -59,9 +68,20 @@
 <form th:if="${canAccept}" th:action="@{/deals/{id}/accept(id=${deal.id})}" method="post" style="display: inline;">
     <button type="submit">✅ Принять сделку</button>
 </form>
+<p th:if="${canAccept and deal.customer.id != currentUserId and deal.offer != null}" style="font-size: 0.9em; color: #666;">
+    При принятии сделки у заказчика будут заморожены <span th:text="${deal.amount}"></span> SC.
+</p>
+<p th:if="${canAccept and deal.customer.id == currentUserId}" style="font-size: 0.9em; color: #666;">
+    При принятии с вашего баланса будут заморожены <span th:text="${deal.amount}"></span> SC.
+</p>
 
-<form th:if="${canComplete}" th:action="@{/deals/{id}/complete(id=${deal.id})}" method="post" style="display: inline;">
-    <button type="submit">🏁 Завершить сделку</button>
+<form th:if="${canConfirmCompletion}" th:action="@{/deals/{id}/complete(id=${deal.id})}" method="post" style="display: inline;">
+    <button type="submit">🏁 Подтвердить завершение</button>
+</form>
+
+<form th:if="${canDispute}" th:action="@{/deals/{id}/dispute(id=${deal.id})}" method="post" style="display: inline;"
+      onsubmit="return confirm('Открыть спор? Замороженные монеты вернутся заказчику.')">
+    <button type="submit" style="color: darkorange;">⚠ Открыть спор</button>
 </form>
 
 <form th:if="${canCancel}" th:action="@{/deals/{id}/cancel(id=${deal.id})}" method="post" style="display: inline;"
@@ -69,16 +89,16 @@
     <button type="submit" style="color: red;">❌ Отменить</button>
 </form>
 
-<p th:if="${!canAccept and !canComplete and !canCancel}">
+<p th:if="${!canAccept and !canConfirmCompletion and !canCancel and !canDispute}">
     Нет доступных действий для текущего статуса.
 </p>
 
 <p th:if="${deal.status.name() == 'PROPOSED'}">
     <small th:if="${deal.offer != null and deal.executor.id == currentUserId}">
-        Вы — исполнитель. Подтвердите сделку, чтобы начать работу.
+        Вы — исполнитель. Подтвердите сделку, чтобы начать работу (монеты заказчика будут заморожены).
     </small>
     <small th:if="${deal.request != null and deal.customer.id == currentUserId}">
-        Вы — заказчик. Подтвердите отклик исполнителя.
+        Вы — заказчик. Подтвердите отклик исполнителя (с вашего баланса будут заморожены монеты).
     </small>
     <small th:if="${deal.offer != null and deal.customer.id == currentUserId}">
         Ожидается подтверждение исполнителя.
@@ -86,6 +106,10 @@
     <small th:if="${deal.request != null and deal.executor.id == currentUserId}">
         Ожидается подтверждение заказчика.
     </small>
+</p>
+
+<p th:if="${deal.status.name() == 'IN_PROGRESS'}">
+    <small>После выполнения услуги обе стороны должны подтвердить завершение — тогда монеты перейдут исполнителю.</small>
 </p>
 
 <hr>

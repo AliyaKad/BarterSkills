@@ -22,7 +22,12 @@
 <p><strong>Email:</strong> <span th:text="${user.email}"></span></p>
 <p><strong>Город:</strong> <span th:text="${user.city}"></span></p>
 <p><strong>О себе:</strong> <span th:text="${user.bio}"></span></p>
-<p><strong>Баланс SkillCoin:</strong> <span th:text="${user.skillCoinBalance}"></span></p>
+<p>
+    <strong>SkillCoin:</strong>
+    доступно <span th:text="${availableBalance}">0</span> SC,
+    заморожено <span th:text="${heldBalance}">0</span> SC
+    (<a href="/transactions">история транзакций</a>)
+</p>
 <p><strong>Рейтинг:</strong> <span th:text="${avgRating}"></span></p>
 <p><strong>Проверен:</strong> <span th:text="${user.isVerified} ? 'Да' : 'Нет'"></span></p>
 
