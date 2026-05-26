@@ -35,6 +35,10 @@ public class User {
     @Column(name = "skill_coin_balance")
     private Integer skillCoinBalance = 0;
 
+    @Column(name = "skill_coin_held")
+    @Builder.Default
+    private Integer skillCoinHeld = 0;
+
     @Column(name = "is_verified")
     private Boolean isVerified = false;
 

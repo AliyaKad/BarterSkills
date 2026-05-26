@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
@@ -59,24 +60,33 @@ public class ApiController {
     @GetMapping("/auth/me")
     public ResponseEntity<UserProfileResponse> getMe(HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
-        if (userId == null) return ResponseEntity.status(401).build();
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
 
-        return userService.getUserById(userId)
-                .map(u -> ResponseEntity.ok(UserProfileResponse.builder()
-                        .id(u.getId())
-                        .firstName(u.getFirstName())
-                        .lastName(u.getLastName())
-                        .email(u.getEmail())
-                        .skillCoins(u.getSkillCoinBalance())
-                        .rating(u.getRating())
-                        .isVerified(u.getIsVerified())
-                        .city(u.getCity())
-                        .bio(u.getBio())
-                        .skillsCanOffer(u.getSkillsCanOffer())
-                        .skillsNeeded(u.getSkillsNeeded())
-                        .build()
-                ))
-                .orElse(ResponseEntity.notFound().build());
+        Optional<User> userOpt = userService.getUserById(userId);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(toProfileResponse(userOpt.get()));
+    }
+
+    private UserProfileResponse toProfileResponse(User u) {
+        return UserProfileResponse.builder()
+                .id(u.getId())
+                .firstName(u.getFirstName())
+                .lastName(u.getLastName())
+                .email(u.getEmail())
+                .skillCoins(u.getSkillCoinBalance())
+                .skillCoinHeld(u.getSkillCoinHeld() != null ? u.getSkillCoinHeld() : 0)
+                .rating(u.getRating())
+                .isVerified(u.getIsVerified())
+                .city(u.getCity())
+                .bio(u.getBio())
+                .skillsCanOffer(u.getSkillsCanOffer())
+                .skillsNeeded(u.getSkillsNeeded())
+                .build();
     }
 
     // Выход
@@ -234,19 +244,21 @@ public class ApiController {
     @GetMapping("/user/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
-                .map(u -> ResponseEntity.ok(Map.of(
-                        "id", u.getId(),
-                        "firstName", u.getFirstName(),
-                        "lastName", u.getLastName(),
-                        "email", u.getEmail(),
-                        "rating", u.getRating(),
-                        "skillCoins", u.getSkillCoinBalance(),
-                        "bio", u.getBio(),
-                        "city", u.getCity(),
-                        "skillsCanOffer", u.getSkillsCanOffer(),
-                        "skillsNeeded", u.getSkillsNeeded()
-                        // "createdAt" убрали, так как его нет в User
-                )))
+                .map(u -> {
+                    Map<String, Object> body = new HashMap<>();
+                    body.put("id", u.getId());
+                    body.put("firstName", u.getFirstName());
+                    body.put("lastName", u.getLastName());
+                    body.put("email", u.getEmail());
+                    body.put("rating", u.getRating());
+                    body.put("skillCoins", u.getSkillCoinBalance());
+                    body.put("skillCoinHeld", u.getSkillCoinHeld());
+                    body.put("bio", u.getBio());
+                    body.put("city", u.getCity());
+                    body.put("skillsCanOffer", u.getSkillsCanOffer());
+                    body.put("skillsNeeded", u.getSkillsNeeded());
+                    return ResponseEntity.ok(body);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 }

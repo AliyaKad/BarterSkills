@@ -12,6 +12,7 @@ public class UserProfileResponse {
     private String lastName;
     private String email;
     private Integer skillCoins;
+    private Integer skillCoinHeld;
     private Double rating;
     private Boolean isVerified;
     private String city;

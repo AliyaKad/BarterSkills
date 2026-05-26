@@ -3,11 +3,12 @@ import { Star, Edit3, Trash2 } from 'lucide-react';
 import ReviewModal from './ReviewModal';
 import api from '../api/axios';
 
-export default function ReviewList({ userId, currentUserId, reviewsData, onUpdate }) {
+export default function ReviewList({ userId, currentUserId, userName, onUpdate }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingReview, setEditingReview] = useState(null);
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [averageFromApi, setAverageFromApi] = useState(null);
 
     // Загрузка отзывов при монтировании
     useEffect(() => {
@@ -18,7 +19,14 @@ export default function ReviewList({ userId, currentUserId, reviewsData, onUpdat
         try {
             setLoading(true);
             const res = await api.get(`/api/reviews/user/${userId}`);
-            setReviews(res.data.reviews || []);
+            const list = (res.data.reviews || []).map(r => ({
+                ...r,
+                authorName: r.authorName || `${r.authorFirstName || ''} ${r.authorLastName || ''}`.trim(),
+            }));
+            setReviews(list);
+            if (res.data.averageRating != null) {
+                setAverageFromApi(res.data.averageRating);
+            }
         } catch (err) {
             console.error('Ошибка загрузки отзывов:', err);
             setReviews([]);
@@ -54,9 +62,11 @@ export default function ReviewList({ userId, currentUserId, reviewsData, onUpdat
     const myReview = reviews.find(r => r.authorId === currentUserId);
 
     // Считаем средний рейтинг
-    const averageRating = reviews.length > 0
-        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-        : 0;
+    const averageRating = averageFromApi != null
+        ? averageFromApi
+        : (reviews.length > 0
+            ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+            : 0);
 
     return (
         <div className="space-y-4">
@@ -158,7 +168,7 @@ export default function ReviewList({ userId, currentUserId, reviewsData, onUpdat
             {/* Модальное окно */}
             <ReviewModal
                 userId={userId}
-                userName=""
+                userName={userName || ''}
                 existingReview={editingReview}
                 isOpen={isModalOpen}
                 onClose={() => {

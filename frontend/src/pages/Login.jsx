@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import api from '../api/axios';
+import { fetchMe } from '../api/marketplace';
 
 export default function Login({ setUser }) {
     const [isRegister, setIsRegister] = useState(false);
@@ -22,11 +23,12 @@ export default function Login({ setUser }) {
                 }));
             }
 
-            const res = await api.post('/api/login', new URLSearchParams({
+            await api.post('/api/login', new URLSearchParams({
                 email: form.email, password: form.password
             }));
 
-            setUser(res.data);
+            const me = await fetchMe();
+            setUser(me.data);
         } catch (err) {
             let msg = 'Ошибка авторизации';
             if (err.response?.data?.error) msg = err.response.data.error;
