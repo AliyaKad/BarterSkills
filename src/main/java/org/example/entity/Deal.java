@@ -77,12 +77,3 @@ public class Deal {
         this.status = DealStatus.DISPUTED;
     }
 }
-
-enum DealStatus {
-    PROPOSED,     // Предложена
-    ACCEPTED,     // Принята
-    IN_PROGRESS,  // В процессе
-    COMPLETED,    // Завершена
-    DISPUTED,     // Спор
-    CANCELLED     // Отменена
-}

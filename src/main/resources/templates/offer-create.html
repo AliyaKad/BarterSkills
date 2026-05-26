@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Новое предложение — BarterSkills</title>
+</head>
+<body>
+<h1>Создать предложение услуги</h1>
+
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<form action="/offers/create" method="post">
+    <p>
+        <label>Название *<br>
+            <input type="text" name="title" required maxlength="200" placeholder="Например: Репетиторство по математике">
+        </label>
+    </p>
+    <p>
+        <label>Описание<br>
+            <textarea name="description" rows="5" cols="50" placeholder="Подробности услуги"></textarea>
+        </label>
+    </p>
+    <p>
+        <label>Категория<br>
+            <select name="category">
+                <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}"></option>
+            </select>
+        </label>
+    </p>
+    <p>
+        <label>Цена (SkillCoin)<br>
+            <input type="number" name="priceInSkillCoins" min="0" value="0">
+        </label>
+    </p>
+    <button type="submit">Опубликовать</button>
+    <a href="/profile">Отмена</a>
+</form>
+
+<p><a href="/offers">← Все предложения</a></p>
+</body>
+</html>

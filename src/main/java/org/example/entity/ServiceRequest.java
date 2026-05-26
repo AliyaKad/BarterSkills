@@ -18,6 +18,9 @@ public class ServiceRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String title;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -55,7 +58,8 @@ public class ServiceRequest {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public ServiceRequest(String description, Integer maxPrice, User requestedBy) {
+    public ServiceRequest(String title, String description, Integer maxPrice, User requestedBy) {
+        this.title = title;
         this.description = description;
         this.maxPrice = maxPrice;
         this.requestedBy = requestedBy;
@@ -70,19 +74,3 @@ public class ServiceRequest {
     }
 }
 
-enum Category {
-    EDUCATION,    // Образование
-    IT,           // IT и программирование
-    HOUSEHOLD,    // Бытовые услуги
-    CREATIVE,     // Творчество
-    TRANSLATION,  // Переводы
-    LEGAL,        // Юридические услуги
-    OTHER         // Другое
-}
-
-enum RequestStatus {
-    OPEN,           // Открыт
-    IN_PROGRESS,    // В работе
-    DONE,           // Завершён
-    CANCELLED       // Отменён
-}

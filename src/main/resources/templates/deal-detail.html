@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="'Сделка #' + ${deal.id} + ' — BarterSkills'">Сделка</title>
+</head>
+<body>
+<h1 th:text="'Сделка #' + ${deal.id}">Сделка</h1>
+
+<p>
+    <a href="/deals">← Все сделки</a> |
+    <a href="/profile">Профиль</a>
+</p>
+
+<div th:if="${success}" style="color: green;" th:text="${success}"></div>
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<hr>
+
+<p><strong>Статус:</strong> <span th:text="${deal.status}"></span></p>
+<p><strong>Сумма:</strong> <span th:text="${deal.amount}"></span> SkillCoin</p>
+
+<p th:if="${deal.offer != null}">
+    <strong>Предложение:</strong>
+    <a th:href="@{/offers/{id}(id=${deal.offer.id})}" th:text="${deal.offer.title}"></a>
+</p>
+<p th:if="${deal.request != null}">
+    <strong>Запрос:</strong>
+    <a th:href="@{/requests/{id}(id=${deal.request.id})}" th:text="${deal.request.title}"></a>
+</p>
+
+<p>
+    <strong>Заказчик:</strong>
+    <span th:if="${deal.customer.id == currentUserId}">вы</span>
+    <a th:if="${deal.customer.id != currentUserId}"
+       th:href="@{/profile/{userId}(userId=${deal.customer.id})}"
+       th:text="${deal.customer.firstName + ' ' + deal.customer.lastName}"></a>
+</p>
+<p>
+    <strong>Исполнитель:</strong>
+    <span th:if="${deal.executor.id == currentUserId}">вы</span>
+    <a th:if="${deal.executor.id != currentUserId}"
+       th:href="@{/profile/{userId}(userId=${deal.executor.id})}"
+       th:text="${deal.executor.firstName + ' ' + deal.executor.lastName}"></a>
+</p>
+
+<p><strong>Создана:</strong>
+    <span th:text="${#temporals.format(deal.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+</p>
+<p th:if="${deal.completionDate != null}">
+    <strong>Завершена:</strong>
+    <span th:text="${#temporals.format(deal.completionDate, 'dd.MM.yyyy HH:mm')}"></span>
+</p>
+
+<hr>
+
+<h2>Действия</h2>
+
+<form th:if="${canAccept}" th:action="@{/deals/{id}/accept(id=${deal.id})}" method="post" style="display: inline;">
+    <button type="submit">✅ Принять сделку</button>
+</form>
+
+<form th:if="${canComplete}" th:action="@{/deals/{id}/complete(id=${deal.id})}" method="post" style="display: inline;">
+    <button type="submit">🏁 Завершить сделку</button>
+</form>
+
+<form th:if="${canCancel}" th:action="@{/deals/{id}/cancel(id=${deal.id})}" method="post" style="display: inline;"
+      onsubmit="return confirm('Отменить сделку?')">
+    <button type="submit" style="color: red;">❌ Отменить</button>
+</form>
+
+<p th:if="${!canAccept and !canComplete and !canCancel}">
+    Нет доступных действий для текущего статуса.
+</p>
+
+<p th:if="${deal.status.name() == 'PROPOSED'}">
+    <small th:if="${deal.offer != null and deal.executor.id == currentUserId}">
+        Вы — исполнитель. Подтвердите сделку, чтобы начать работу.
+    </small>
+    <small th:if="${deal.request != null and deal.customer.id == currentUserId}">
+        Вы — заказчик. Подтвердите отклик исполнителя.
+    </small>
+    <small th:if="${deal.offer != null and deal.customer.id == currentUserId}">
+        Ожидается подтверждение исполнителя.
+    </small>
+    <small th:if="${deal.request != null and deal.executor.id == currentUserId}">
+        Ожидается подтверждение заказчика.
+    </small>
+</p>
+
+<hr>
+
+<p>
+    <a th:href="@{/chat/{userId}(userId=${deal.customer.id == currentUserId ? deal.executor.id : deal.customer.id})}">
+        💬 Написать второй стороне
+    </a>
+</p>
+</body>
+</html>

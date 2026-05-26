@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Запросы на услуги — BarterSkills</title>
+</head>
+<body>
+<h1>Запросы на услуги</h1>
+
+<p>
+    <a href="/profile">Профиль</a> |
+    <a href="/requests/new">+ Создать запрос</a> |
+    <a href="/offers">Предложения услуг</a>
+</p>
+
+<hr>
+
+<h2>Поиск и фильтры</h2>
+<form action="/requests" method="get">
+    <p>
+        <label>Текст:<br>
+            <input type="text" name="q" th:value="${q}" placeholder="Название или описание">
+        </label>
+    </p>
+    <p>
+        <label>Категория:<br>
+            <select name="category">
+                <option value="">— любая —</option>
+                <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}"
+                        th:selected="${cat == selectedCategory}"></option>
+            </select>
+        </label>
+    </p>
+    <p>
+        <label>Бюджет не больше (SC):<br>
+            <input type="number" name="maxBudget" min="0" th:value="${maxBudget}"
+                   placeholder="Показать запросы с бюджетом до этой суммы">
+        </label>
+    </p>
+    <p>
+        <label>Статус:<br>
+            <select name="status">
+                <option value="">OPEN (по умолчанию)</option>
+                <option th:each="st : ${statuses}" th:value="${st}" th:text="${st}"
+                        th:selected="${st == selectedStatus}"></option>
+            </select>
+        </label>
+    </p>
+    <button type="submit">Найти</button>
+    <a href="/requests">Сбросить</a>
+</form>
+
+<hr>
+
+<p th:if="${#lists.isEmpty(requests)}">Ничего не найдено.</p>
+
+<ul>
+    <li th:each="req : ${requests}" style="margin-bottom: 1em;">
+        <a th:href="@{/requests/{id}(id=${req.id})}">
+            <strong th:text="${req.title}">Название</strong>
+        </a>
+        — <span th:text="${req.category}">IT</span> —
+        <span th:if="${req.maxPrice != null}">до <span th:text="${req.maxPrice}">0</span> SC</span>
+        <span th:if="${req.maxPrice == null}">бюджет не указан</span>
+        — <span th:text="${req.status}">OPEN</span>
+        <br>
+        <small th:text="${req.description}">Описание</small>
+        <br>
+        <small>
+            Заказчик:
+            <a th:href="@{/profile/{userId}(userId=${req.requestedBy.id})}"
+               th:text="${req.requestedBy.firstName + ' ' + req.requestedBy.lastName}">Имя</a>
+            ·
+            <span th:text="${#temporals.format(req.createdAt, 'dd.MM.yyyy HH:mm')}">дата</span>
+        </small>
+    </li>
+</ul>
+</body>
+</html>

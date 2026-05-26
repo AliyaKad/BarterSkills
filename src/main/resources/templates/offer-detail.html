@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${offer.title} + ' — BarterSkills'">Предложение</title>
+</head>
+<body>
+<h1 th:text="${offer.title}">Название</h1>
+
+<p>
+    <a href="/offers">← Все предложения</a> |
+    <a href="/profile">Профиль</a>
+</p>
+
+<hr>
+
+<p><strong>Категория:</strong> <span th:text="${offer.category}"></span></p>
+<p><strong>Цена:</strong> <span th:text="${offer.priceInSkillCoins}"></span> SkillCoin</p>
+<p><strong>Статус:</strong> <span th:text="${offer.status}"></span></p>
+<p><strong>Описание:</strong></p>
+<p th:text="${offer.description}">—</p>
+
+<p>
+    <strong>Исполнитель:</strong>
+    <a th:if="${offer.createdBy.id != currentUserId}"
+       th:href="@{/profile/{userId}(userId=${offer.createdBy.id})}"
+       th:text="${offer.createdBy.firstName + ' ' + offer.createdBy.lastName}">Имя</a>
+    <span th:if="${offer.createdBy.id == currentUserId}">вы</span>
+</p>
+
+<p><strong>Создано:</strong>
+    <span th:text="${#temporals.format(offer.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+</p>
+
+<hr th:if="${offer.createdBy.id != currentUserId and offer.status.name() == 'ACTIVE'}">
+
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<h2 th:if="${offer.createdBy.id != currentUserId and offer.status.name() == 'ACTIVE'}">Заключить сделку</h2>
+<p th:if="${offer.createdBy.id != currentUserId and offer.status.name() == 'ACTIVE'}">
+    Вы станете заказчиком, исполнитель — автор предложения.
+</p>
+<form th:if="${offer.createdBy.id != currentUserId and offer.status.name() == 'ACTIVE'}"
+      th:action="@{/deals/from-offer/{id}(id=${offer.id})}" method="post">
+    <p>
+        <label>Сумма (SkillCoin):<br>
+            <input type="number" name="amount" min="0" th:value="${offer.priceInSkillCoins}">
+        </label>
+    </p>
+    <button type="submit">Предложить сделку</button>
+</form>
+</body>
+</html>

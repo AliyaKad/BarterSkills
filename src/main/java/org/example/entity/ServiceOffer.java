@@ -62,10 +62,3 @@ public class ServiceOffer {
         this.status = OfferStatus.CANCELLED;
     }
 }
-
-enum OfferStatus {
-    ACTIVE,         // Активно
-    PENDING,        // На модерации
-    COMPLETED,      // Завершено
-    CANCELLED       // Отменено
-}
